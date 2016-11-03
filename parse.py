@@ -1,22 +1,29 @@
 class Vxml:
     version=None
-    tags=[]
+    internalTags=[]
+    text=''
 
 class Form:
     iD=None
-    tags=[]
+    internalTags=[]
+    text=''
 
 class Field:
     name=None
-    tags=[]
+    internalTags=[]
+    text=''
 
-def FindClass(tag, args, tags):
+class Var:
+    expr=None
+    internalTags=[]
+
+def FindClass(tag, args, tags, text):
     c=None
     if 'vxml' in tag:
         c=Vxml()
         if 'version' in args:
+    
             c.version=args['version']
-            c.tags=tags
     #-----------------
     if 'form' in tag:
         c=Form()
@@ -27,13 +34,18 @@ def FindClass(tag, args, tags):
         c=Field()
         if 'name' in args:
             c.name=args['name']
-
+    #-----------------
+    if 'var' in tag:
+        c=Var()
+        if 'expr' in args:
+            c.expr=args['expr']
     
     #tagClasses=[]
     #for tag in tags:
     #        tagClass=FindClass(tag,{},[])
     #        tagClasses.append(tagClass)
-    
+    c.internalTags=tags
+    c.text=text
 
     return c
     
@@ -56,50 +68,81 @@ def Split():
         #word=""
     return s
 
-def CreateTree():
-    tag=''
-    args={}
+#некоторые теги <tag></tag>
+tagsRepeat=['vxml','form','field']
+#а некоторые <tag/>
+tagsNoRepeat=['var']
+
+def CreateTree(words):
     tags=[]
-    text=Split()
-    listOneTag=[]
+
+    #текст
+    if words[0][0]!='<':
+        return words
     
-    for i, word in enumerate(text):
-        if (word[0]=='<'):
-            listOneTag=ListOneTag(text,i)
-            classTag=CreateTagClass(listOneTag, DelUnChar(word))
-            tags.append(classTag)
+    while words!=[]:
+        internalTags=[]
+        nameTag=DelUnChar(words[0])
+        del words[0]
+
+        #аргументы тега (поля класса)
+        args={}
+        try:
+            while '=' in words[0]:
+                arg=words[0].split('=')
+                args[DelUnChar(arg[0])]=DelUnChar(arg[1])
+                del words[0]
+        except:
+            args={}
+        
+        #тег заканчивается </tag>
+        #поэтому содержит не только аргументы, но и внутренние теги,
+        #а также какой-нибудь текст (возможно)
+        if nameTag in tagsRepeat:
+            
+            contentOFtag=[]
+            #ищем конец тега
+            while ((nameTag in words[0])==False):
+                contentOFtag.append(words[0])
+                del words[0]
+                
+            #тег закончился
+            #внутренние теги в рекурсию
+            #и удалить закрывающийся тег
+            del words[0]
+            internalTags=CreateTree(contentOFtag)
+            
+        #тег заканчивается />
+        #содержит только аргументы
+        #if nameTag in tagsNoRepeat:
+            #internalTags=[]
+        
+        if (len(internalTags)>0) and (type(internalTags[0])!=str):
+            tags.append(FindClass(nameTag,args,internalTags,''))
+        else:
+            tags.append(FindClass(nameTag,args,[],internalTags))
+            
+
+    return tags
 
 
-def CreateTagClass(listTag, nameTag):
-    args={}
-    tags=[]
-    #del listTag[0]
-    i=0
-    while '=' in listTag[i]:
-        arg=listTag[i].split('=')
-        args[arg[0]]=arg[1]
-        i+=1
-    for t in listTag:
-        if ('<' in t) and ('/' in t)==False:
-            tag=FindClass(t,{},[])
-            tags.append(tag)
-    tag=FindClass(nameTag, args, tags)
-    return tag
+
+
+
+
+
+           
+
+#Возвращается содержание(аргументы и вложенные теги) одного тега
+#и строчка с концом
+#из подаваемого тега берется первый попавшийся тег
+#def ContentOfTag(text):
+       
+
+
 
   
 
-def ListOneTag(listD, num):
-    l=[]
-    stopTag='/'+DelUnChar(listD[num])
-    tag=DelUnChar(listD[num])
-    #for i, a in enumerate(listD):
-    #    if (i>=num) and ((stopTag in a)==False):
-    #        l.append(a)
-    i=num+1
-    while (tag in listD[i])==False:
-        l.append(listD[i])
-        i+=1
-    return l
 
 
     
@@ -125,7 +168,7 @@ def ReadFile():
     return text
 
 
-
+#a=CreateTree(Split())
 
 
 

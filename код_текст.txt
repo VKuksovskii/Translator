@@ -1,0 +1,8 @@
+<vxml version = "2.1">
+	<form id="MainMenu">
+    		<field name="instrument">
+		lalala lala
+		</field>
+	</form>
+	<var lala="pp"/>
+</vxml>

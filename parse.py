@@ -40,22 +40,21 @@ def FindClass(tag, args, tags, text):
         if 'expr' in args:
             c.expr=args['expr']
     
-    #tagClasses=[]
-    #for tag in tags:
-    #        tagClass=FindClass(tag,{},[])
-    #        tagClasses.append(tagClass)
     c.internalTags=tags
     c.text=text
 
     return c
-    
 
-def Split():
+#Вызов парсера
+def Parser(path):
+    text=ReadFile(path)
+    splitText=Split(text)
+    return CreateTree(splitText)
+
+def Split(text):
     s=[]
     word=""
     unnecessaryChar=['\n','\t']
-    text=ReadFile()
-    #for line in text:
     for i, l in enumerate(text):
         if (l in unnecessaryChar)==False:
             if l ==' ':
@@ -112,10 +111,6 @@ def CreateTree(words):
             del words[0]
             internalTags=CreateTree(contentOFtag)
             
-        #тег заканчивается />
-        #содержит только аргументы
-        #if nameTag in tagsNoRepeat:
-            #internalTags=[]
         
         if (len(internalTags)>0) and (type(internalTags[0])!=str):
             tags.append(FindClass(nameTag,args,internalTags,''))
@@ -123,30 +118,9 @@ def CreateTree(words):
             tags.append(FindClass(nameTag,args,[],internalTags))
             
 
-    return tags
+    return tags 
 
-
-
-
-
-
-
-           
-
-#Возвращается содержание(аргументы и вложенные теги) одного тега
-#и строчка с концом
-#из подаваемого тега берется первый попавшийся тег
-#def ContentOfTag(text):
-       
-
-
-
-  
-
-
-
-    
-#ФУНКЦИЯ ДЛЯ УБИРАНИЯ НЕНУЖНЫХ СИМВОЛОВ
+#Удаление ненужных символов из строки
 def DelUnChar(s):
     unChar='</>"'
     newStr=''
@@ -156,8 +130,8 @@ def DelUnChar(s):
     return newStr
 
 
-def ReadFile():
-    f = open('код_текст.txt', 'r')
+def ReadFile(path):
+    f = open(path, 'r')
     lines = []
     for line in f:
         lines.append(line)
@@ -167,8 +141,6 @@ def ReadFile():
         text+=' '+l
     return text
 
-
-#a=CreateTree(Split())
 
 
 

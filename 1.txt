@@ -1,0 +1,23 @@
+import base
+import tags
+
+    variables = {}
+
+    variables[Block_0] = None
+
+    var next = None
+
+    while true:
+
+        if not (next is None):
+
+            # var None = None
+            # expr нужно преобразовать в условие
+            # cond нужно преобразовать в условие
+            if cond is True
+                # bargein ???
+                # bargeintype ???
+                # xml:lang - т.к. один документ, то берется из него же
+                # cond нужно преобразовать в условие
+                if cond is True and self.form.count == self.count:
+                    naulib.sayText(['Hello,', 'world!'])

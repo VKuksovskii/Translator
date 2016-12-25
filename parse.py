@@ -1,128 +1,55 @@
 ﻿# -*- coding: utf-8 -*-
-from tags import *
+from tagslib import *
 
 
-def FindClass(tag, args, tags, text):
+def find_class(tag, args, tags, text):
     c = None
-    '''
-    print(tag)
-    print(args)
-    print(tags)
-    print(text)
-    print('----')
-    '''
+
     if 'vxml' in tag:
 
-        version = None
-        xml_base = None
-        application = None
-        xml_lang = None
-        xmlns = None
+        version = args['version'] if ('version' in args) else None
+        xml_base = args['xml:base'] if ('xml:base' in args) else  None
+        application = args['application'] if ('application' in args) else None
+        xml_lang = args['xml:lang'] if ('xml:lang' in args) else None
+        xmlns = xmlns = args['xmlns'] if ('xmlns' in args) else None
 
-        if 'version' in args:
-            version = args['version']
-            if (version != "2.0" and version != "2.1"):
-                raise Exception("bad vxml version")
-
-        if 'xml_base' in args:
-            xml_base = args['xml:base']
-
-        if 'application' in args:
-            application = args['application']
-
-        if 'xml_lang' in args:
-            xml_lang = "en-Us" if (args['xml:lang'] is None) else args['xml:lang']
-
-        if 'xmlns' in args:
-            xmlns = args['xmlns']
-            if (xmlns is None):
-                raise Exception("bad xmlns")
-
-        c = Vxml(version, xml_base, application, xml_lang, xmlns)
-        # -----------------
+        c = Vxml(version, xml_base, application, xml_lang, xmlns, tags)
+    # -----------------
     if 'form' in tag:
-        Id = None
-        scope = None
-        if 'id' in args:
-            Id = args['id']
-        else:
-            # formCng нужен для генерации id формы по нему, реализован как статическая переменная
-            try:
-                FindClass.formCnt += 1
-            except:
-                FindClass.formCnt = 0
-            Id = FindClass.formCnt
-        if 'scope' in args:
-            scope = args['scope']
-            if (scope != None):
-                if (scope != "dialog" and scope != "document"):
-                    raise Exception("bad scope")
-            else:
-                scope = "dialog"
+        Id = args['id'] if ('id' in args) else None
+        scope = args['scope'] if ('scope' in args) else None
 
-        c = Form(Id, scope)
+        c = Form(Id, scope, tags)
     # -----------------
     if 'prompt' in tag:
-        bargein = None
-        bargeintype = None
-        cond = None
-        count = None
-        timeout = None
-        xml_lang = None
-        if 'bargein' in args:
-            bargein = args['bargein']
-        if 'bargeintype' in args:
-            bargeintype = args['bargeintype']
-        if 'cond' in args:
-            cond = args['cond']
-        if 'count' in args:
-            count = args['count']
-        if 'timeout' in args:
-            bargein = args['timeout']
-        if 'xml:lang' in args:
-            xml_lang = args['xml:lang']
+        bargein = args['bargein'] if ('bargein' in args) else None
+        bargeintype = args['bargeintype'] if ('bargeintype' in args) else None
+        cond = args['cond'] if ('cond' in args) else None
+        count = args['count'] if ('count' in args) else None
+        timeout = args['timeout'] if ('timeout' in args) else None
+        xml_lang = args['xml_lang'] if ('xml_lang' in args) else None
 
-        bargein = True if bargein is None else bargein
-        bargeintype = True if bargeintype is None else bargeintype
-        cond = True if cond is None else cond
-        count = 1 if count is None else count
-        timeout = 5 if timeout is None else timeout
-        xml_lang = xml_lang
-
-        c = Prompt(bargein, bargeintype, cond, count, timeout,
-                   xml_lang)
+        c =Prompt(bargein, bargeintype, cond, count, timeout, xml_lang, tags, text)
     # -----------------
     if 'block' in tag:
-        name = None
-        expr = None
-        cond = None
-        if 'name' in args:
-            name = args['name']
-        if 'expr' in args:
-            expr = args['expr']
-        if 'cond' in args:
-            cond = args['cond']
+        name = args['name'] if ('name' in args) else None
+        expr = args['expr'] if ('expr' in args) else None
+        cond = args['cond'] if ('cond' in args) else None
 
-        if (cond == None): cond = True
-
-        c = Block(name, expr, cond)
+        c = Block(name, expr, cond, tags)
     # -----------------
-
-    c.internalTags = tags
-    # [(vxml, [form, [block, [promt]]])]
-    c.text = text
 
     return c
 
 
 # Вызов парсера
-def Parser(path):
-    text = ReadFile(path)
-    splitText = Split(text)
-    return CreateTree(splitText)
+def parse(path):
+    text = read_file(path)
+    split_text = split(text)
+    return create_tree(split_text)
 
 
-def Split(text):
+def split(text):
     s = []
     word = ""
     unnecessaryChar = ['\n', '\t']
@@ -159,7 +86,7 @@ tagsRepeat = ['vxml', 'form', 'field', 'block', 'prompt']
 tagsNoRepeat = ['var']
 
 
-def CreateTree(words):
+def create_tree(words):
     tags = []
 
     # текст
@@ -168,7 +95,7 @@ def CreateTree(words):
 
     while words != []:
         internalTags = []
-        nameTag = DelUnChar(words[0])
+        nameTag = del_un_char(words[0])
         del words[0]
 
         # аргументы тега (поля класса)
@@ -176,7 +103,7 @@ def CreateTree(words):
         try:
             while '=' in words[0]:
                 arg = words[0].split('=')
-                args[DelUnChar(arg[0])] = DelUnChar(arg[1])
+                args[del_un_char(arg[0])] = del_un_char(arg[1])
                 del words[0]
         except:
             args = {}
@@ -199,34 +126,29 @@ def CreateTree(words):
             # и удалить закрывающийся тег
 
             del words[0]
-            internalTags = CreateTree(contentOFtag)
+            internalTags = create_tree(contentOFtag)
 
         if (len(internalTags) > 0) and (type(internalTags[0]) != str):
-            tags.append(FindClass(nameTag, args, internalTags, []))
+            tags.append(find_class(nameTag, args, internalTags, []))
         else:
-            tags.append(FindClass(nameTag, args, [], internalTags))
-
+            tags.append(find_class(nameTag, args, [], internalTags))
     return tags
 
 
 # Удаление ненужных символов из строки
-def DelUnChar(s):
+def del_un_char(s):
     unChar = '<>"'
-    newStr = ''
+    newStr = []
     for c in s:
-        if (((c in unChar) == False) or ((c == '/') and (newStr[len(newStr) - 1] != '<'))):
-            newStr += c
+        if ((c not in unChar) or ((c == '/') and (newStr[len(newStr) - 1] != '<'))):
+            newStr.append(c)
+    return ''.join(newStr)
 
-    return newStr
 
-
-def ReadFile(path):
+def read_file(path):
     f = open(path, 'r')
     lines = []
     for line in f:
         lines.append(line)
     f.close()
-    text = ""
-    for l in lines:
-        text += ' ' + l
-    return text
+    return ' '.join(lines)
